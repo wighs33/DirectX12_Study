@@ -26,6 +26,8 @@ public:
 
 	HWND      MainWnd()const;
 
+	void Set4xMsaaState(bool value);
+
 	int Run();
 
 	virtual bool Initialize();
@@ -35,6 +37,11 @@ protected:
 	virtual void CreateRtvAndDsvDescriptorHeaps();
 	virtual void OnResize();
 	virtual void Draw(const GameTimer& gt) = 0;
+
+	// 간편한 마우스 입력 처리를 위한 가상함수들
+	virtual void OnMouseDown(WPARAM btnState, int x, int y) { }
+	virtual void OnMouseUp(WPARAM btnState, int x, int y) { }
+	virtual void OnMouseMove(WPARAM btnState, int x, int y) { }
 
 	bool InitMainWindow();
 	bool InitDirect3D();
@@ -53,6 +60,9 @@ protected:
 	HINSTANCE mhAppInst = nullptr; // 응용 프로그램 인스턴스 핸들
 	HWND      mhMainWnd = nullptr; // 주 창 핸들
 	bool      mAppPaused = false;  // 응용 프로그램이 일시 정지된 상태인가?
+	bool      mMinimized = false;  // 응용 프로그램이 최소화된 상태인가?
+	bool      mMaximized = false;  // 응용 프로그램이 최대화된 상태인가?
+	bool      mResizing = false;   // 사용자가 크기 조정용 테두리를 끌고 있는 상태인가?
 
 	bool      m4xMsaaState = false;    // 4X MSAA 활성화 여부
 	UINT      m4xMsaaQuality = 0;      // 4X MSAA의 품질 수준

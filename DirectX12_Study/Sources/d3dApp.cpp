@@ -1,5 +1,5 @@
 #include "d3dApp.h"
-#include <WindowsX.h>
+#include <WindowsX.h>	//GET_X_LPARAM, GET_Y_LPARAM 매크로 사용
 
 using Microsoft::WRL::ComPtr;
 using namespace std;
@@ -36,6 +36,18 @@ D3DApp::~D3DApp()
 HWND D3DApp::MainWnd()const
 {
 	return mhMainWnd;
+}
+
+void D3DApp::Set4xMsaaState(bool value)
+{
+	if (m4xMsaaState != value)
+	{
+		m4xMsaaState = value;
+
+		// Recreate the swapchain and buffers with new multisample settings.
+		CreateSwapChain();
+		OnResize();
+	}
 }
 
 int D3DApp::Run()
@@ -199,8 +211,129 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
+	case WM_ACTIVATE:
+		if (LOWORD(wParam) == WA_INACTIVE)
+		{
+			mAppPaused = true;
+			mTimer.Stop();
+		}
+		else
+		{
+			mAppPaused = false;
+			mTimer.Start();
+		}
+		return 0;
+
+	// WM_SIZE는 응용 프로그램 창의 크기가 바뀔 때 발생한다.
+	case WM_SIZE:
+		// Save the new client area dimensions.
+		mClientWidth = LOWORD(lParam);
+		mClientHeight = HIWORD(lParam);
+		if (md3dDevice)
+		{
+			if (wParam == SIZE_MINIMIZED)
+			{
+				mAppPaused = true;
+				mMinimized = true;
+				mMaximized = false;
+			}
+			else if (wParam == SIZE_MAXIMIZED)
+			{
+				mAppPaused = false;
+				mMinimized = false;
+				mMaximized = true;
+				OnResize();
+			}
+			else if (wParam == SIZE_RESTORED)
+			{
+				// Restoring from minimized state?
+				if (mMinimized)
+				{
+					mAppPaused = false;
+					mMinimized = false;
+					OnResize();
+				}
+
+				// Restoring from maximized state?
+				else if (mMaximized)
+				{
+					mAppPaused = false;
+					mMaximized = false;
+					OnResize();
+				}
+				else if (mResizing)
+				{
+					// If user is dragging the resize bars, we do not resize 
+					// the buffers here because as the user continuously 
+					// drags the resize bars, a stream of WM_SIZE messages are
+					// sent to the window, and it would be pointless (and slow)
+					// to resize for each WM_SIZE message received from dragging
+					// the resize bars.  So instead, we reset after the user is 
+					// done resizing the window and releases the resize bars, which 
+					// sends a WM_EXITSIZEMOVE message.
+				}
+				else // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
+				{
+					OnResize();
+				}
+			}
+		}
+		return 0;
+
+	// WM_EXITSIZEMOVE는 사용자가 크기 변경 테두리를 잡으면 전달된다.
+	case WM_ENTERSIZEMOVE:
+		mAppPaused = true;
+		mResizing = true;
+		mTimer.Stop();
+		return 0;
+
+	// WM_EXITSIZEMOVE는 사용자가 크기 변경 테두리를 놓으면 전달된다.
+	// 창의 새 크기에 맞게 모든 것을 재설정한다.
+	case WM_EXITSIZEMOVE:
+		mAppPaused = false;
+		mResizing = false;
+		mTimer.Start();
+		OnResize();
+		return 0;
+
+	// WM_DESTROY는 창이 파괴되려 할 때 전달된다.
 	case WM_DESTROY:
 		PostQuitMessage(0);
+		return 0;
+
+	// The WM_MENUCHAR는 메뉴가 활성화되어서 사용자가 키를 눌렀지만 어떤 키나 단축키에도
+	// 해당되지 않을 때 전달된다.
+	case WM_MENUCHAR:
+		// alt-enter를 눌렀을 때 삐소리 나지 않게 한다.
+		return MAKELRESULT(0, MNC_CLOSE);
+
+	// 창이 너무 작아지지 않게 한다.
+	case WM_GETMINMAXINFO:
+		((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
+		((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
+		return 0;
+
+	case WM_LBUTTONDOWN:
+	case WM_MBUTTONDOWN:
+	case WM_RBUTTONDOWN:
+		OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		return 0;
+	case WM_LBUTTONUP:
+	case WM_MBUTTONUP:
+	case WM_RBUTTONUP:
+		OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		return 0;
+	case WM_MOUSEMOVE:
+		OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		return 0;
+	case WM_KEYUP:
+		if (wParam == VK_ESCAPE)
+		{
+			PostQuitMessage(0);
+		}
+		else if ((int)wParam == VK_F2)
+			Set4xMsaaState(!m4xMsaaState);
+
 		return 0;
 	}
 
