@@ -36,6 +36,7 @@ public:
 protected:
 	virtual void CreateRtvAndDsvDescriptorHeaps();
 	virtual void OnResize();
+	virtual void Update(const GameTimer& gt) = 0;
 	virtual void Draw(const GameTimer& gt) = 0;
 
 	// 간편한 마우스 입력 처리를 위한 가상함수들
@@ -50,6 +51,8 @@ protected:
 
 	void FlushCommandQueue();
 
+	ID3D12Resource* CurrentBackBuffer()const;
+	D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView()const;
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView()const;
 
 	void CalculateFrameStats();
@@ -82,6 +85,7 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
 
 	static const int SwapChainBufferCount = 2;
+	int mCurrBackBuffer = 0;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mSwapChainBuffer[SwapChainBufferCount];
 	Microsoft::WRL::ComPtr<ID3D12Resource> mDepthStencilBuffer;
 

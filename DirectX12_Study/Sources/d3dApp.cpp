@@ -72,7 +72,7 @@ int D3DApp::Run()
 			if (!mAppPaused)
 			{
 				CalculateFrameStats();
-				//Update(mTimer);
+				Update(mTimer);
 				Draw(mTimer);
 			}
 			else
@@ -121,28 +121,28 @@ void D3DApp::CreateRtvAndDsvDescriptorHeaps()
 
 void D3DApp::OnResize()
 {
-	//assert(md3dDevice);
-	//assert(mSwapChain);
-	//assert(mDirectCmdListAlloc);
+	assert(md3dDevice);
+	assert(mSwapChain);
+	assert(mDirectCmdListAlloc);
 
-	//// Flush before changing any resources.
-	//FlushCommandQueue();
+	// Flush before changing any resources.
+	FlushCommandQueue();
 
-	//ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
-	//// Release the previous resources we will be recreating.
-	//for (int i = 0; i < SwapChainBufferCount; ++i)
-	//	mSwapChainBuffer[i].Reset();
-	//mDepthStencilBuffer.Reset();
+	// Release the previous resources we will be recreating.
+	for (int i = 0; i < SwapChainBufferCount; ++i)
+		mSwapChainBuffer[i].Reset();
+	mDepthStencilBuffer.Reset();
 
-	//// Resize the swap chain.
-	//ThrowIfFailed(mSwapChain->ResizeBuffers(
-	//	SwapChainBufferCount,
-	//	mClientWidth, mClientHeight,
-	//	mBackBufferFormat,
-	//	DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
+	// Resize the swap chain.
+	ThrowIfFailed(mSwapChain->ResizeBuffers(
+		SwapChainBufferCount,
+		mClientWidth, mClientHeight,
+		mBackBufferFormat,
+		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 
-	//mCurrBackBuffer = 0;
+	mCurrBackBuffer = 0;
 	
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (UINT i = 0; i < SwapChainBufferCount; i++)
@@ -188,13 +188,13 @@ void D3DApp::OnResize()
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mDepthStencilBuffer.Get(),
 		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
 
-	//// Execute the resize commands.
-	//ThrowIfFailed(mCommandList->Close());
-	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+	// Execute the resize commands.
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-	//// Wait until resize is complete.
-	//FlushCommandQueue();
+	// Wait until resize is complete.
+	FlushCommandQueue();
 
 	// Update the viewport transform to cover the client area.
 	mScreenViewport.TopLeftX = 0;
@@ -527,6 +527,19 @@ void D3DApp::FlushCommandQueue()
 		WaitForSingleObject(eventHandle, INFINITE);
 		CloseHandle(eventHandle);
 	}
+}
+
+ID3D12Resource* D3DApp::CurrentBackBuffer()const
+{
+	return mSwapChainBuffer[mCurrBackBuffer].Get();
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::CurrentBackBufferView()const
+{
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
+		mRtvHeap->GetCPUDescriptorHandleForHeapStart(),
+		mCurrBackBuffer,
+		mRtvDescriptorSize);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::DepthStencilView()const
