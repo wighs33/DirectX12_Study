@@ -29,8 +29,8 @@ D3DApp::D3DApp(HINSTANCE hInstance)
 
 D3DApp::~D3DApp()
 {
-	//if (md3dDevice != nullptr)
-	//	FlushCommandQueue();
+	if (md3dDevice != nullptr)
+		FlushCommandQueue();
 }
 
 HWND D3DApp::MainWnd()const
@@ -59,7 +59,7 @@ int D3DApp::Run()
 
 			if (!mAppPaused)
 			{
-				//CalculateFrameStats();
+				CalculateFrameStats();
 				//Update(mTimer);
 				Draw(mTimer);
 			}
@@ -373,7 +373,60 @@ void D3DApp::CreateSwapChain()
 		mSwapChain.GetAddressOf()));
 }
 
+void D3DApp::FlushCommandQueue()
+{
+	// 현재 울타리 지점까지의 명령들을 표시하도록 울타리 값을 전진시킨다.
+	mCurrentFence++;
+
+	// 새 울타리 지점을 설정하는 명령을 대기열에 추가한다.
+	// GPU가 Signal명령까지의 모든 명령을 처리하기 전까지는 설정되지 않는다.
+	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
+
+	// GPU가 이 울타리 지점까지의 명령들을 완료할 때까지 기다린다.
+	if (mFence->GetCompletedValue() < mCurrentFence)
+	{
+		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+
+		// GPU가 현재 울타리 지점에 도달했으면 이벤트를 발동한다.
+		ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));
+
+		// GPU가 현재 울타리 지점에 도달했음을 뜻하는 이벤트를 기다린다.
+		WaitForSingleObject(eventHandle, INFINITE);
+		CloseHandle(eventHandle);
+	}
+}
+
 D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::DepthStencilView()const
 {
 	return mDsvHeap->GetCPUDescriptorHandleForHeapStart();
+}
+
+void D3DApp::CalculateFrameStats()
+{
+	// 이 메서드는 평균 FPS를 계산하며, 하나의 프레임을 렌더링하는 데 걸리는 평균 시간도 계산한다.
+
+	static int frameCnt = 0;
+	static float timeElapsed = 0.0f;
+
+	frameCnt++;
+
+	// 1초 동안의 평균 프레임 수를 계산한다.
+	if ((mTimer.TotalTime() - timeElapsed) >= 1.0f)
+	{
+		float fps = (float)frameCnt; // fps = frameCnt / 1
+		float mspf = 1000.0f / fps;
+
+		wstring fpsStr = to_wstring(fps);
+		wstring mspfStr = to_wstring(mspf);
+
+		wstring windowText = mMainWndCaption +
+			L"    fps: " + fpsStr +
+			L"   mspf: " + mspfStr;
+
+		SetWindowText(mhMainWnd, windowText.c_str());
+
+		// 다음 번 평균을 위해 수치들을 초기화한다.
+		frameCnt = 0;
+		timeElapsed += 1.0f;
+	}
 }

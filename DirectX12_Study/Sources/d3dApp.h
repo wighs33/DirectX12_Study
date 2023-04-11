@@ -41,18 +41,23 @@ protected:
 	void CreateCommandObjects();
 	void CreateSwapChain();
 
+	void FlushCommandQueue();
+
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView()const;
+
+	void CalculateFrameStats();
 
 protected:
 	static D3DApp* mApp;
 
-	HINSTANCE mhAppInst = nullptr; // application instance handle
-	HWND      mhMainWnd = nullptr; // main window handle
-	bool      mAppPaused = false;  // is the application paused?
+	HINSTANCE mhAppInst = nullptr; // 응용 프로그램 인스턴스 핸들
+	HWND      mhMainWnd = nullptr; // 주 창 핸들
+	bool      mAppPaused = false;  // 응용 프로그램이 일시 정지된 상태인가?
 
-	bool      m4xMsaaState = false;    // 4X MSAA enabled
-	UINT      m4xMsaaQuality = 0;      // quality level of 4X MSAA
+	bool      m4xMsaaState = false;    // 4X MSAA 활성화 여부
+	UINT      m4xMsaaQuality = 0;      // 4X MSAA의 품질 수준
 
+	//경과 시간과 게임 전체 시간을 측정하는 데 쓰인다.
 	GameTimer mTimer;
 
 	Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;
