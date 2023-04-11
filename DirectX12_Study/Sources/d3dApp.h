@@ -32,11 +32,14 @@ public:
 
 protected:
 	virtual void CreateRtvAndDsvDescriptorHeaps();
+	virtual void OnResize();
 
 	bool InitMainWindow();
 	bool InitDirect3D();
 	void CreateCommandObjects();
 	void CreateSwapChain();
+
+	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView()const;
 
 protected:
 	static D3DApp* mApp;
@@ -59,6 +62,8 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
 
 	static const int SwapChainBufferCount = 2;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mSwapChainBuffer[SwapChainBufferCount];
+	Microsoft::WRL::ComPtr<ID3D12Resource> mDepthStencilBuffer;
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDsvHeap;
@@ -69,6 +74,7 @@ protected:
 
 	std::wstring mMainWndCaption = L"d3d App";
 	DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	int mClientWidth = 800;
 	int mClientHeight = 600;
 };

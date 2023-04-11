@@ -81,8 +81,8 @@ bool D3DApp::Initialize()
 	if (!InitDirect3D())
 		return false;
 
-	//// Do the initial resize code.
-	//OnResize();
+	// Do the initial resize code.
+	OnResize();
 
 	return true;
 }
@@ -105,6 +105,94 @@ void D3DApp::CreateRtvAndDsvDescriptorHeaps()
 	dsvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
 		&dsvHeapDesc, IID_PPV_ARGS(mDsvHeap.GetAddressOf())));
+}
+
+void D3DApp::OnResize()
+{
+	//assert(md3dDevice);
+	//assert(mSwapChain);
+	//assert(mDirectCmdListAlloc);
+
+	//// Flush before changing any resources.
+	//FlushCommandQueue();
+
+	//ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+
+	//// Release the previous resources we will be recreating.
+	//for (int i = 0; i < SwapChainBufferCount; ++i)
+	//	mSwapChainBuffer[i].Reset();
+	//mDepthStencilBuffer.Reset();
+
+	//// Resize the swap chain.
+	//ThrowIfFailed(mSwapChain->ResizeBuffers(
+	//	SwapChainBufferCount,
+	//	mClientWidth, mClientHeight,
+	//	mBackBufferFormat,
+	//	DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
+
+	//mCurrBackBuffer = 0;
+	
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	for (UINT i = 0; i < SwapChainBufferCount; i++)
+	{
+		//교환 사슬의 i번째 버퍼를 얻는다.
+		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffer[i])));
+		// 그 버퍼에 대한 RTV를 생성한다.
+		md3dDevice->CreateRenderTargetView(mSwapChainBuffer[i].Get(), nullptr, rtvHeapHandle);
+		//힙의 다음 항목으로 넘어간다.
+		rtvHeapHandle.Offset(1, mRtvDescriptorSize);
+	}
+
+	// 깊이 스텐실 버퍼와 뷰를 생성한다.
+	D3D12_RESOURCE_DESC depthStencilDesc;
+	depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	depthStencilDesc.Alignment = 0;
+	depthStencilDesc.Width = mClientWidth;
+	depthStencilDesc.Height = mClientHeight;
+	depthStencilDesc.DepthOrArraySize = 1;
+	depthStencilDesc.MipLevels = 1;
+	depthStencilDesc.Format = mDepthStencilFormat;
+	depthStencilDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
+	depthStencilDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+	depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	D3D12_CLEAR_VALUE optClear;
+	optClear.Format = mDepthStencilFormat;
+	optClear.DepthStencil.Depth = 1.0f;
+	optClear.DepthStencil.Stencil = 0;
+	ThrowIfFailed(md3dDevice->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&depthStencilDesc,
+		D3D12_RESOURCE_STATE_COMMON,
+		&optClear,
+		IID_PPV_ARGS(mDepthStencilBuffer.GetAddressOf())));
+
+	// 전체 자원이 밉맵 수준 0에 대한 서술자를 해당 자원의 픽셀 형식을 적용해서 생성한다.
+	md3dDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), nullptr, DepthStencilView());
+
+	// 자원을 초기 상태에서 깊이 버퍼로 사용할 수 있는 상태로 전이한다.
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mDepthStencilBuffer.Get(),
+		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+
+	//// Execute the resize commands.
+	//ThrowIfFailed(mCommandList->Close());
+	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+	//// Wait until resize is complete.
+	//FlushCommandQueue();
+
+	//// Update the viewport transform to cover the client area.
+	//mScreenViewport.TopLeftX = 0;
+	//mScreenViewport.TopLeftY = 0;
+	//mScreenViewport.Width = static_cast<float>(mClientWidth);
+	//mScreenViewport.Height = static_cast<float>(mClientHeight);
+	//mScreenViewport.MinDepth = 0.0f;
+	//mScreenViewport.MaxDepth = 1.0f;
+
+	//mScissorRect = { 0, 0, mClientWidth, mClientHeight };
 }
 
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -283,4 +371,9 @@ void D3DApp::CreateSwapChain()
 		mCommandQueue.Get(),
 		&sd,
 		mSwapChain.GetAddressOf()));
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::DepthStencilView()const
+{
+	return mDsvHeap->GetCPUDescriptorHandleForHeapStart();
 }
