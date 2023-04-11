@@ -42,31 +42,31 @@ int D3DApp::Run()
 {
 	MSG msg = { 0 };
 
-	//mTimer.Reset();
+	mTimer.Reset();
 
 	while (msg.message != WM_QUIT)
 	{
-		// If there are Window messages then process them.
+		// Windows 메시지가 있으면 처리한다.
 		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		// Otherwise, do animation/game stuff.
+		// 없으면 애니메이션/게임 작업을 수행한다.
 		else
 		{
-			//mTimer.Tick();
+			mTimer.Tick();
 
-			//if (!mAppPaused)
-			//{
-			//	CalculateFrameStats();
-			//	Update(mTimer);
-			//	Draw(mTimer);
-			//}
-			//else
-			//{
-			//	Sleep(100);
-			//}
+			if (!mAppPaused)
+			{
+				//CalculateFrameStats();
+				//Update(mTimer);
+				Draw(mTimer);
+			}
+			else
+			{
+				Sleep(100);
+			}
 		}
 	}
 
