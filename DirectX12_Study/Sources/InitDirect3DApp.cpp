@@ -22,7 +22,7 @@ public:
 private:
     //virtual void OnResize()override;
     //virtual void Update(const GameTimer& gt)override;
-    //virtual void Draw(const GameTimer& gt)override;
+    virtual void Draw(const GameTimer& gt)override;
 
 };
 
@@ -76,8 +76,9 @@ bool InitDirect3DApp::Initialize()
 //
 //}
 //
-//void InitDirect3DApp::Draw(const GameTimer& gt)
-//{
+
+void InitDirect3DApp::Draw(const GameTimer& gt)
+{
 //    // Reuse the memory associated with command recording.
 //    // We can only reset when the associated command lists have finished execution on the GPU.
 //	ThrowIfFailed(mDirectCmdListAlloc->Reset());
@@ -90,9 +91,9 @@ bool InitDirect3DApp::Initialize()
 //	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 //		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 //
-//    // Set the viewport and scissor rect.  This needs to be reset whenever the command list is reset.
-//    mCommandList->RSSetViewports(1, &mScreenViewport);
-//    mCommandList->RSSetScissorRects(1, &mScissorRect);
+    // Set the viewport and scissor rect.  This needs to be reset whenever the command list is reset.
+    mCommandList->RSSetViewports(1, &mScreenViewport);
+    mCommandList->RSSetScissorRects(1, &mScissorRect);
 //
 //    // Clear the back buffer and depth buffer.
 //	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
@@ -120,4 +121,4 @@ bool InitDirect3DApp::Initialize()
 //	// done for simplicity.  Later we will show how to organize our rendering code
 //	// so we do not have to wait per frame.
 //	FlushCommandQueue();
-//}
+}

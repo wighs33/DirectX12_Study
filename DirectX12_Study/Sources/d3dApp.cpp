@@ -184,15 +184,15 @@ void D3DApp::OnResize()
 	//// Wait until resize is complete.
 	//FlushCommandQueue();
 
-	//// Update the viewport transform to cover the client area.
-	//mScreenViewport.TopLeftX = 0;
-	//mScreenViewport.TopLeftY = 0;
-	//mScreenViewport.Width = static_cast<float>(mClientWidth);
-	//mScreenViewport.Height = static_cast<float>(mClientHeight);
-	//mScreenViewport.MinDepth = 0.0f;
-	//mScreenViewport.MaxDepth = 1.0f;
+	// Update the viewport transform to cover the client area.
+	mScreenViewport.TopLeftX = 0;
+	mScreenViewport.TopLeftY = 0;
+	mScreenViewport.Width = static_cast<float>(mClientWidth);
+	mScreenViewport.Height = static_cast<float>(mClientHeight);
+	mScreenViewport.MinDepth = 0.0f;
+	mScreenViewport.MaxDepth = 1.0f;
 
-	//mScissorRect = { 0, 0, mClientWidth, mClientHeight };
+	mScissorRect = { 0, 0, mClientWidth, mClientHeight };
 }
 
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
