@@ -10,7 +10,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 
     try
     {
-        InitDirect3DApp theApp(hInstance);
+        BoxApp theApp(hInstance);
         if (!theApp.Initialize())
             return 0;
 

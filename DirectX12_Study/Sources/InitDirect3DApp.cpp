@@ -10,16 +10,16 @@
 
 using namespace DirectX;
 
-InitDirect3DApp::InitDirect3DApp(HINSTANCE hInstance)
+BoxApp::BoxApp(HINSTANCE hInstance)
 : D3DApp(hInstance) 
 {
 }
 
-InitDirect3DApp::~InitDirect3DApp()
+BoxApp::~BoxApp()
 {
 }
 
-bool InitDirect3DApp::Initialize()
+bool BoxApp::Initialize()
 {
     if(!D3DApp::Initialize())
 		return false;
@@ -27,18 +27,18 @@ bool InitDirect3DApp::Initialize()
 	return true;
 }
 
-void InitDirect3DApp::OnResize()
+void BoxApp::OnResize()
 {
 	D3DApp::OnResize();
 }
 
-void InitDirect3DApp::Update(const GameTimer& gt)
+void BoxApp::Update(const GameTimer& gt)
 {
 
 }
 
 
-void InitDirect3DApp::Draw(const GameTimer& gt)
+void BoxApp::Draw(const GameTimer& gt)
 {
 	//명령 기록에 관련된 메모리의 재활용을 위해 명령 할당자를 재설정한다.
 	//재설정은 GPU가 관련 명령 목록들을 모두 처리한 후에 일어난다.
