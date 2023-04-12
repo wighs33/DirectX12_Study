@@ -5,7 +5,7 @@
 // the screen, and displaying frame stats.
 //
 //***************************************************************************************
-#include "InitDirect3DApp.h"
+#include "BoxApp.h"
 #include <DirectXColors.h>
 
 using namespace DirectX;

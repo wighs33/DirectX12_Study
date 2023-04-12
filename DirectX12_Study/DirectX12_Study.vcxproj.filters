@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Sources\InitDirect3DApp.cpp">
+    <ClCompile Include="Sources\BoxApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Sources\d3dApp.cpp">
@@ -44,8 +44,11 @@
     <ClInclude Include="Sources\GameTimer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\InitDirect3DApp.h">
+    <ClInclude Include="Sources\BoxApp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\color.hlsl" />
   </ItemGroup>
 </Project>
