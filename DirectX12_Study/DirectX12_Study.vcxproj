@@ -143,12 +143,14 @@
     <ClCompile Include="Sources\d3dUtil.cpp" />
     <ClCompile Include="Sources\d3dApp.cpp" />
     <ClCompile Include="Sources\InitDirect3DApp.cpp" />
+    <ClCompile Include="Sources\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\GameTimer.h" />
     <ClInclude Include="Sources\d3dUtil.h" />
     <ClInclude Include="Sources\d3dApp.h" />
     <ClInclude Include="Sources\d3dx12.h" />
+    <ClInclude Include="Sources\InitDirect3DApp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
