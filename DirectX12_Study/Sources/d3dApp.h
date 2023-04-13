@@ -25,6 +25,7 @@ public:
 	static D3DApp* GetApp();
 
 	HWND      MainWnd()const;
+	float     AspectRatio()const;
 
 	void Set4xMsaaState(bool value);
 

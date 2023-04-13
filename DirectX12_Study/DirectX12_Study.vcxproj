@@ -144,6 +144,7 @@
     <ClCompile Include="Sources\d3dApp.cpp" />
     <ClCompile Include="Sources\BoxApp.cpp" />
     <ClCompile Include="Sources\main.cpp" />
+    <ClCompile Include="Sources\MathHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\GameTimer.h" />
@@ -151,6 +152,8 @@
     <ClInclude Include="Sources\d3dApp.h" />
     <ClInclude Include="Sources\d3dx12.h" />
     <ClInclude Include="Sources\BoxApp.h" />
+    <ClInclude Include="Sources\MathHelper.h" />
+    <ClInclude Include="Sources\UploadBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\color.hlsl">

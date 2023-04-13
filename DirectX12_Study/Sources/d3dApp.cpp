@@ -38,6 +38,11 @@ HWND D3DApp::MainWnd()const
 	return mhMainWnd;
 }
 
+float D3DApp::AspectRatio()const
+{
+	return static_cast<float>(mClientWidth) / mClientHeight;
+}
+
 void D3DApp::Set4xMsaaState(bool value)
 {
 	if (m4xMsaaState != value)
