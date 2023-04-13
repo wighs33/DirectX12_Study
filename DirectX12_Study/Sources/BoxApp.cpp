@@ -22,7 +22,7 @@ bool BoxApp::Initialize()
     if(!D3DApp::Initialize())
 		return false;
 
-	// Reset the command list to prep for initialization commands.
+	// 초기화 명령들을 준비하기 위해 명령 목록을 재설정한다.
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
 	BuildDescriptorHeaps();
@@ -32,12 +32,12 @@ bool BoxApp::Initialize()
 	BuildBoxGeometry();
 	BuildPSO();
 
-	// Execute the initialization commands.
+	// 초기화 명령들을 실행한다.
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-	// Wait until initialization is complete.
+	// 초기화가 완료될 때까지 기다린다.
 	FlushCommandQueue();
 		
 	return true;
@@ -47,19 +47,19 @@ void BoxApp::OnResize()
 {
 	D3DApp::OnResize();
 
-	// The window resized, so update the aspect ratio and recompute the projection matrix.
+	// 창의 크리가 바뀌었으므로 종횡비를 갱신하고 투영 행렬을 다시 계산한다.
 	XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f * MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
 	XMStoreFloat4x4(&mProj, P);
 }
 
 void BoxApp::Update(const GameTimer& gt)
 {
-	// Convert Spherical to Cartesian coordinates.
+	// 구면 좌표를 데카르트 좌표로 변환한다.
 	float x = mRadius * sinf(mPhi) * cosf(mTheta);
 	float z = mRadius * sinf(mPhi) * sinf(mTheta);
 	float y = mRadius * cosf(mPhi);
 
-	// Build the view matrix.
+	// 시야 행렬을 구축한다.
 	XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
 	XMVECTOR target = XMVectorZero();
 	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
@@ -71,7 +71,7 @@ void BoxApp::Update(const GameTimer& gt)
 	XMMATRIX proj = XMLoadFloat4x4(&mProj);
 	XMMATRIX worldViewProj = world * view * proj;
 
-	// Update the constant buffer with the latest worldViewProj matrix.
+	// 최신의 worldViewProj 행렬로 상수 버퍼를 갱신한다.
 	ObjectConstants objConstants;
 	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
 	mObjectCB->CopyData(0, objConstants);
@@ -90,10 +90,15 @@ void BoxApp::Draw(const GameTimer& gt)
 
 	// 뷰포트와 가위 직사각형을 설정한다.
 	// 명령 목록을 재설정할 때마다 이들도 재설정해야 한다.
+	// 매개변수 1 : 설정할 뷰포트의 개수
+	// 매개변수 2 : 뷰포트 구조체들의 배열을 가리키는 포인터
 	mCommandList->RSSetViewports(1, &mScreenViewport);
+	// 매개변수 1 : 설정할 가위 직사각형의 개수
+	// 매개변수 2 : 직사각형 구조체들의 배열을 가리키는 포인터
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
 
 	// 자원 용도에 관련된 상태 전이를 다렉에 통지한다.
+	// 화면에 표시할 이미지를 나타내는 텍스트 자원(매개변수1)을 제시 상태(매개변수2)에서 렌더 대상 상태(매개변수3)로 전이한다.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
@@ -155,27 +160,27 @@ void BoxApp::OnMouseMove(WPARAM btnState, int x, int y)
 {
 	if ((btnState & MK_LBUTTON) != 0)
 	{
-		// Make each pixel correspond to a quarter of a degree.
+		// 마우스 한 픽셀 이동을 1/4도에 대응시킨다.
 		float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
 		float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
 
-		// Update angles based on input to orbit camera around box.
+		// 마우스 입력에 기초해 각도를 갱신한다. 이에 의해 카네라가 상자를 중심으로 공전하게 된다.
 		mTheta += dx;
 		mPhi += dy;
 
-		// Restrict the angle mPhi.
+		// mPhi 각도를 제한한다.
 		mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
 	}
 	else if ((btnState & MK_RBUTTON) != 0)
 	{
-		// Make each pixel correspond to 0.005 unit in the scene.
+		// 마우스 한 픽셀 이동을 장면의 0.005단위에 대응시킨다.
 		float dx = 0.005f * static_cast<float>(x - mLastMousePos.x);
 		float dy = 0.005f * static_cast<float>(y - mLastMousePos.y);
 
-		// Update the camera radius based on input.
+		// 마우스 입력에 기초해서 카메라 반지름을 갱신한다.
 		mRadius += dx - dy;
 
-		// Restrict the radius.
+		// 반지름을 제한한다.
 		mRadius = MathHelper::Clamp(mRadius, 3.0f, 15.0f);
 	}
 
@@ -201,7 +206,7 @@ void BoxApp::BuildConstantBuffers()
 	UINT objCBByteSize = D3DUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 
 	D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
-	// Offset to the ith object constant buffer in the buffer.
+	// 버퍼에서 i번째 물체의 상수 버퍼의 오프셋을 얻는다.
 	int boxCBufIndex = 0;
 	cbAddress += boxCBufIndex * objCBByteSize;
 
@@ -216,25 +221,23 @@ void BoxApp::BuildConstantBuffers()
 
 void BoxApp::BuildRootSignature()
 {
-	// Shader programs typically require resources as input (constant buffers,
-	// textures, samplers).  The root signature defines the resources the shader
-	// programs expect.  If we think of the shader programs as a function, and
-	// the input resources as function parameters, then the root signature can be
-	// thought of as defining the function signature.  
+	// 일반적으로 셰이더 프로그램은 특정 자원들이 입력된다고 기대한다.
+	// 루트 서명은 셰이더 프로그램이 기대하는 자원들을 정의한다.
+	// 셰이더 프로그램은 본질적으로 하나의 함수이고 셰이더에 입력되는 자원들은 함수의 매개변수들에 해당하므로, 루트 서명은 곧 함수 서명을 정의하는 수단이라 할 수 있다.
 
-	// Root parameter can be a table, root descriptor or root constants.
+	// 루트 매개변수는 서술자 테이블이거나 루트 서술자 또는 루트 상수이다.
 	CD3DX12_ROOT_PARAMETER slotRootParameter[1];
 
-	// Create a single descriptor table of CBVs.
+	// CBV 하나를 담는 서술자 테이블을 생성한다.
 	CD3DX12_DESCRIPTOR_RANGE cbvTable;
 	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
 	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
 
-	// A root signature is an array of root parameters.
+	// 루트 서명은 루트 매개변수들의 배열이다.
 	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, 0, nullptr,
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+	// 상수 버퍼 하나로 구성된 서술자 구간을 가리키는 슬롯 하나로 이루어진 루트 서명을 생성한다.
 	ComPtr<ID3DBlob> serializedRootSig = nullptr;
 	ComPtr<ID3DBlob> errorBlob = nullptr;
 	HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
@@ -285,27 +288,27 @@ void BoxApp::BuildBoxGeometry()
 
 	std::array<std::uint16_t, 36> indices =
 	{
-		// front face
+		// 앞면
 		0, 1, 2,
 		0, 2, 3,
 
-		// back face
+		// 뒷면
 		4, 6, 5,
 		4, 7, 6,
 
-		// left face
+		// 왼쪽 면
 		4, 5, 1,
 		4, 1, 0,
 
-		// right face
+		// 오른쪽 면
 		3, 2, 6,
 		3, 6, 7,
 
-		// top face
+		// 윗면
 		1, 5, 6,
 		1, 6, 2,
 
-		// bottom face
+		// 아랫면
 		4, 0, 3,
 		4, 3, 7
 	};

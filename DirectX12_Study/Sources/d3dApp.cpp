@@ -153,14 +153,29 @@ void D3DApp::OnResize()
 	for (UINT i = 0; i < SwapChainBufferCount; i++)
 	{
 		//교환 사슬의 i번째 버퍼를 얻는다.
+		// 매개변수 1 : 얻고자 하는 특정 후면 버퍼 색인
+		// 매개변수 2 : 그 후면 버퍼를 나타내는 ID3D12Resource 인터페이스의 COM ID
+		// 매개변수 3 : 그 인터페이스를 가리키는 포인터
 		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffer[i])));
 		// 그 버퍼에 대한 RTV를 생성한다.
+		// 매개변수 1 : 렌더 대상으로 사용할 자원을 가리키는 포인터
+		// 매개변수 2 : 렌더 대상 서술자 구조체를 가리키는 포인터, nullptr로 후면 버퍼의 밉맵수준에 대한 뷰를 얻음
+		// 매개변수 3 : 생성된 렌더 대상 뷰가 저장될 서술자의 핸들
 		md3dDevice->CreateRenderTargetView(mSwapChainBuffer[i].Get(), nullptr, rtvHeapHandle);
 		//힙의 다음 항목으로 넘어간다.
 		rtvHeapHandle.Offset(1, mRtvDescriptorSize);
 	}
 
 	// 깊이 스텐실 버퍼와 뷰를 생성한다.
+	// 1. 자원의 차원
+	// 2. 너비
+	// 3. 높이
+	// 4. 3차원 텍스처의 깊이
+	// 5. 밉맵 수준의 개수
+	// 6. 텍셀의 자료 형식
+	// 7. 다중 표본화의 표본 개수와 품질 수준
+	// 8. 텍스처의 배치
+	// 9. 기타 자원 플래그들
 	D3D12_RESOURCE_DESC depthStencilDesc;
 	depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	depthStencilDesc.Alignment = 0;
@@ -178,6 +193,14 @@ void D3DApp::OnResize()
 	optClear.Format = mDepthStencilFormat;
 	optClear.DepthStencil.Depth = 1.0f;
 	optClear.DepthStencil.Stencil = 0;
+	// 자원을 생성하고 지정된 속성들에 부합하는 힙에 그 자원을 맡긴다.
+	// 매개변수 1 : 자원을 맡길 힙의 속성들을 담은 구조체
+	// 매개변수 2 : 자원을 맡길 힙이 가졌으면 하는 속성들을 나타내는 추가적인 플래그들
+	// 매개변수 3 : 생성하고자 하는 자원 서술자 구조체 인스턴스의 포인터
+	// 매개변수 4 : 자원의 초기상채를 지정한다.
+	// 매개변수 5 : 자원 지우기에 최적화된 값을 나타내는 D3D12_CLEAR_VALUE를 가리키는 포인터
+	// 매개변수 6 : 생성하려는 자원 인터페이스 COM ID
+	// 매개변수 7 : 그 인터페이스의 포인터
 	ThrowIfFailed(md3dDevice->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
@@ -193,12 +216,15 @@ void D3DApp::OnResize()
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mDepthStencilBuffer.Get(),
 		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
 
-	// Execute the resize commands.
+	// 명령 목록을 닫는다.
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	// resise 명령들을 대기열에 추가한다.
+	// 매개변수1 : 배열에 있는 명령 목록 개수
+	// 매개변수2 : 명령 목록들의 배열의 첫 원소를 가리키는 포인터
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-	// Wait until resize is complete.
+	// resise 명령이 완료될 때까지 대기한다.
 	FlushCommandQueue();
 
 	// Update the viewport transform to cover the client area.
@@ -417,6 +443,9 @@ bool D3DApp::InitDirect3D()
 	}
 
 	// 2. 울타리 생성과 서술자 크기 얻기
+	// 울타리 인터페이스를 생성한다.
+	// 0으로 초기화
+	// 다른 코드에서 새로운 울타리 만들 때마다 1씩 증가시킨다.
 	ThrowIfFailed(md3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE,
 		IID_PPV_ARGS(&mFence)));
 
@@ -430,6 +459,11 @@ bool D3DApp::InitDirect3D()
 	msQualityLevels.SampleCount = 4;
 	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
 	msQualityLevels.NumQualityLevels = 0;
+
+	//msQualityLevels에 텍스처 형식과 표본 개수를 읽고 그에 적절한 품질 수준을 입력한다.
+	//매개변수1 : 점검할 기능 종류
+	//매개변수2 : 기능 지원 정보가 설정될 구조체를 가리키는 포인터
+	//매개변수3 : 구조체의 크기
 	ThrowIfFailed(md3dDevice->CheckFeatureSupport(
 		D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
 		&msQualityLevels,
@@ -457,17 +491,29 @@ void D3DApp::CreateCommandObjects()
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	//대기열 구조체를 바탕으로 명령대기열 인터페이스 생성
 	ThrowIfFailed(md3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
 
+	// 명령 메모리 할당자 인터페이스를 생성한다.
+	// 매개변수 1 : 명령 목록의 종류
+	// 매개변수 2 : 생성하고자 하는 인터페이스의 ID
+	// 매개변수 3 : 생성된 명령 할당자를 가리키는 포인터
 	ThrowIfFailed(md3dDevice->CreateCommandAllocator(
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
 		IID_PPV_ARGS(mDirectCmdListAlloc.GetAddressOf())));
 
+	// 명령 목록 인터페이스를 생성한다.
+	// 매개변수 1 : GPU가 하나인 시스템이기에 0을 설정
+	// 매개변수 2 : 명령 목록의 종류
+	// 매개변수 3 : 생성된 명령 목록에 연관시킬 할당자
+	// 매개변수 4 : 명령 목록의 초기 파이프라인 상태를 지정, 초기화 목적일 때는 nullptr을 넣는다.
+	// 매개변수 5 : 생성하고자 하는 인터페이스의 ID
+	// 매개변수 6 : 생성된 명령 목록을 가리키는 포인터
 	ThrowIfFailed(md3dDevice->CreateCommandList(
 		0,
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		mDirectCmdListAlloc.Get(), // 연관된 명령 할당자
-		nullptr,                   // 초기 파이프라인 상태 객체
+		mDirectCmdListAlloc.Get(),
+		nullptr,
 		IID_PPV_ARGS(mCommandList.GetAddressOf())));
 
 	// Reset을 호출하려면 명령 목록이 닫혀 있어야 한다.
@@ -504,7 +550,11 @@ void D3DApp::CreateSwapChain()
 	//전체화면에 잘 맞는 디스플레이 모드 선택
 	sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
+	// 교환 사슬 인터페이스 생성
 	// 교환 사슬은 명령 대기열을 이용해서 방출한다.
+	// 매개변수 1 : 대기열 포인터
+	// 매개변수 2 : 교환 사슬 서술 구조체 포인터
+	// 매개변수 3 : 생성된 교환사슬을 가리키는 포인터
 	ThrowIfFailed(mdxgiFactory->CreateSwapChain(
 		mCommandQueue.Get(),
 		&sd,
@@ -541,10 +591,12 @@ ID3D12Resource* D3DApp::CurrentBackBuffer()const
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::CurrentBackBufferView()const
 {
+	// 편의를 위해 CD3DX12_CPU_DESCRIPTOR_HANDLE 생성자 사용
+	// 이 생성자는 주어진 오프셋에 해당하는 후면 버퍼 RTV의 핸들을 돌려준다.
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-		mRtvHeap->GetCPUDescriptorHandleForHeapStart(),
-		mCurrBackBuffer,
-		mRtvDescriptorSize);
+		mRtvHeap->GetCPUDescriptorHandleForHeapStart(),//첫 핸들
+		mCurrBackBuffer,// 오프셋 색인
+		mRtvDescriptorSize);//서술자의 바이트 크기
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::DepthStencilView()const
